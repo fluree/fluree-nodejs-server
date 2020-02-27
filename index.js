@@ -327,69 +327,6 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
     }
 });
 
-//------------------------
-// test data - jic
-//------------------------
-let accounts = [
-    { id: 1, name: "Fluree" },
-    { id: 2, name: "SSBI" },
-    { id: 3, name: "Deloitte" }
-];
-
-//------------------------
-// Routes - jic
-//------------------------
-server.get('/accounts', (request, response) => {
-    response.json(accounts);
-});
-server.get('/accounts/:id', (request, response) => {
-    const accountId = Number(request.params.id);
-    const getAccount = accounts.find((account) => account.id === accountId);
-    if (!getAccount) {
-        response.status(404).send('Account not found.');
-    }
-    else {
-        response.json(getAccount);
-    }
-});
-server.post('/accounts', (request, response) => {
-    const incomingAccount = request.body;
-    accounts.push(incomingAccount);
-    response.json(accounts);
-});
-server.put(`/accounts/:id`, (request, response) => {
-    const accountId = Number(request.params.id);
-    const body = request.body;
-    const account = accounts.find((account) => account.id === accountId);
-    const index = accounts.indexOf(account);
-  
-    if (!account) {
-      response.status(500).send('Account not found.');
-    } else {
-      const updatedAccount = { ...account, ...body };
-  
-      accounts[index] = updatedAccount;
-  
-      response.send(updatedAccount);
-    }
-});
-server.delete(`/accounts/:id`, (request, response) => {
-    const accountId = Number(request.params.id);
-    const newAccounts = accounts.filter((account) => account.id != accountId);
-  
-    if (!newAccounts) {
-      response.status(500).send('Account not found.');
-    } else {
-      accounts = newAccounts;
-      response.send(accounts);
-    }
-});
-server.get(`/`, (request, response) => {
-    response.send('Hello, World');
-});
-
-
-
 
 //// Code to open a connection specifically for one request 
 // server.post('/api/db/:network/:db/:action', (request, response) => {
