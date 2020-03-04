@@ -54,7 +54,7 @@ process.on('SIGINT', shutDownHandler);
 //------------------------
 // Start-up query instance
 //------------------------
-const flureeUrl = "http://localhost:8090";
+const flureeUrl = "http://localhost:8080";
 flureenjs.connect_p(flureeUrl)
     .then(conn => {
         flureeDbConn = conn;
@@ -63,9 +63,10 @@ flureenjs.connect_p(flureeUrl)
     .catch(error => {
         console.error("Error connecting to Fluree DB", error);
         //  [  1.771s] [server] "Server contact error: " 
-        //  "xhttp error - http://localhost:8090/fdb/health" 
-        //  {:url "http://localhost:8090/fdb/health", :error :xhttp/http-error}
+        //  "xhttp error - http://localhost:8080/fdb/health" 
+        //  {:url "http://localhost:8080/fdb/health", :error :xhttp/http-error}
         // -> gracefully shutdown NodeJS server
+        // -> or add re-try logic
     })
 
 
