@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const process = require('process');
 global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;  // switch out to xhr2 https://stackoverflow.com/questions/32604460/xmlhttprequest-module-not-defined-found/46081151#46081151
 global.WebSocket = require('ws');  // https://flaviocopes.com/node-websockets/
-require('./flureenjs.js');
+require('@fluree/flureenjs');
 
 const server = express();
 const PORT = 3000;
