@@ -50,12 +50,21 @@ function shutDownHandler() {
 process.on('SIGTERM', shutDownHandler);
 process.on('SIGINT', shutDownHandler);
 
+//------------------------
+// Connection to Fluree
+//------------------------
+function flureeConnect(url, options){
+    if (!url) {
+        throw "Unable to connect to Fluree: Missing url. "
+    }
 
-//------------------------
-// Start-up query instance
-//------------------------
-const flureeUrl = "http://localhost:8080";
-flureenjs.connect_p(flureeUrl)
+    var cOpts = {};
+    if (options && options.keepAlive && options.keepAlive === true) {
+        cOpts = {"keep-alive-fn": function(){ flureeConnect(url,options); }}
+    }
+
+    console.info("Connecting to Fluree instance @", url, " options: ", cOpts);
+    flureenjs.connect_p(url, cOpts)
     .then(conn => {
         flureeDbConn = conn;
         flureeIsAvailable = true;
@@ -67,7 +76,16 @@ flureenjs.connect_p(flureeUrl)
         //  {:url "http://localhost:8080/fdb/health", :error :xhttp/http-error}
         // -> gracefully shutdown NodeJS server
         // -> or add re-try logic
-    })
+    })   
+}
+
+//------------------------
+// Start-up query instance
+//------------------------
+const flureeUrl = "http://localhost:8080";
+const connectOpts = { keepAlive: true }
+// flureeConnect(flureeUrl);  // without client-side keep-alive
+flureeConnect(flureeUrl, connectOpts);  // with client-side keep-alive
 
 
 //------------------------
