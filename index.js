@@ -51,6 +51,11 @@ process.on('SIGTERM', shutDownHandler);
 process.on('SIGINT', shutDownHandler);
 
 //------------------------
+// Fluree Logging
+//------------------------
+//flureenjs.set_logging({level: "config"});
+
+//------------------------
 // Connection to Fluree
 //------------------------
 function flureeConnect(url, options){
