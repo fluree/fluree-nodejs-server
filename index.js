@@ -124,12 +124,58 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
     var opts = null;
     var query = null;
     var txn = null;
+    var user = undefined;
+    var pwd = undefined;
+    var token = undefined;
+    var expire = undefined;
+    var auth = undefined;
 
     switch (action) {
+
+        case 'password_login':
+            if (body.user) user = body.user;
+            if (body.password) pwd = body.password;
+            if (body.expire) expire = body.expire;
+            flureenjs.password_login(flureeDbConn, ledger, pwd, user, auth, expire)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(500).send(error);
+            });
+            break;
+
+        case 'password_generate':
+            if (body.user) user = body.user;
+            if (body.password) pwd = body.password;
+            if (body.opts)  opts = body.opts;
+            flureenjs.password_generate(flureeDbConn, ledger, pwd, user, opts)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(500).send(error);
+            });
+            break;
             
+        case 'renew_token':
+            if (body.jwt) token = body.jwt; 
+            if (body.expire) expire = body.expire;
+            flureenjs.renew_token(flureeDbConn, token)
+                .then (results => {
+                    response.send(results);
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(500).send(error);
+                });
+                break;
+
         case 'block_query':
-            if (body.query) query = JSON.stringify(body.query);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.query) query = body.query;
+            if (body.opts)  opts = body.opts;
             flureenjs.block_query(flureeDbConn, ledger, query, opts)
             .then (results => {
                 response.send(results);
@@ -143,7 +189,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
         case 'block_range':
             const start = (body.start ? Number(body.start) : null);
             const end = (body.end ? Number(body.end) : null);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.opts)  opts = body.opts;
             flureenjs.block_range(flureeDbConn, ledger, start, end, opts)
             .then (results => {
                 response.send(results);
@@ -153,22 +199,9 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
                 response.status(500).send(error);
             });
             break;
-            
-        case 'collection_id':
-            db = flureenjs.db(flureeDbConn, ledger);
-            flureenjs.collection_id(db, body.name)
-            .then (results => {
-                // Get a number back
-                response.send(JSON.stringify(results));
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
-            });
-            break;
 
         case 'delete_ledger':
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.opts)  opts = body.opts;
             flureenjs.delete_ledger(flureeDbConn, ledger, opts)
             .then (results => {
                 response.send(results);
@@ -193,7 +226,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
                             
         case 'graphql':
             if (body.graphql) query = JSON.stringify(body.graphql);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.opts)  opts = body.opts;
              flureenjs.graphql(flureeDbConn, ledger, query, opts)
             .then (results => {
                 response.send(results);
@@ -205,8 +238,8 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             break;    
 
         case 'history':
-            if (body.query) query = JSON.stringify(body.query);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.query) query = body.query;
+            if (body.opts)  opts = body.opts;
             db = flureenjs.db(flureeDbConn, ledger, opts);
             flureenjs.history_query(db, query, opts)
             .then (results => {
@@ -219,8 +252,8 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             break;    
             
         case 'multi_query':
-            if (body.query) query = JSON.stringify(body.query);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.query) query = body.query;
+            if (body.opts)  opts = body.opts;
             db = flureenjs.db(flureeDbConn, ledger, opts);
             flureenjs.multi_query(db, query, opts)
             .then (results => {
@@ -247,7 +280,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             break;
 
         case 'new_ledger':
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.opts)  opts = body.opts;
             flureenjs.new_ledger(flureeDbConn, ledger, opts)
             .then (results => {
                 response.send(results);
@@ -257,23 +290,10 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
                 response.status(500).send(error);
             });
             break;
-
-        case 'predicate_id':
-            db = flureenjs.db(flureeDbConn, ledger);
-            flureenjs.predicate_id(db, body.name)
-            .then (results => {
-                // Expecting bumber
-                response.send(JSON.stringify(results));
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
-            });
-            break;
         
         case 'query':
-            if (body.query) query = JSON.stringify(body.query);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.query) query = body.query;
+            if (body.opts)  opts = body.opts;
             db = flureenjs.db(flureeDbConn, ledger, opts);
             flureenjs.q(db, query, opts)
             .then (results => {
@@ -284,16 +304,10 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
                 response.status(500).send(error);
             });
             break;
-        
-        case 'resolve_ledger':
-            results = flureenjs.resolve_ledger(flureeDbConn, ledger);
-            console.log(results);
-            response.send(results);
-            break;
                             
         case 'signed_query':
-            if (body.query) query = JSON.stringify(body.query);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.query) query = body.query;
+            if (body.opts)  opts = body.opts;
             flureenjs.signed_query(flureeDbConn, ledger, query, opts)
             .then (results => {
                 response.send(results);
@@ -306,7 +320,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
 
         case 'sparql':
             if (body.query) query = JSON.stringify(body.query);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            if (body.opts)  opts = body.opts;
             db = flureenjs.db(flureeDbConn, ledger, opts);
             flureenjs.sparql(db, query)
             .then (results => {
@@ -317,24 +331,10 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
                 response.status(500).send(error);
             });
             break;    
-
-        case 'subject_id':
-            db = flureenjs.db(flureeDbConn, ledger);
-            console.info("invoking sparql with ", body.subject);
-            flureenjs.subject_id(db, JSON.stringify(body.subject))
-            .then (results => {
-                // Expecting a number
-                response.send(JSON.stringify(results));
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
-            });
-            break;
                     
         case 'transact':
-            txn = JSON.stringify(body.txn);
-            if (body.opts)  opts = JSON.stringify(body.opts);
+            txn = body.txn;
+            if (body.opts)  opts = body.opts;
             flureenjs.transact(flureeDbConn, ledger, txn, opts)
             .then (results => {
                 response.send(JSON.stringify(results));
@@ -368,7 +368,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
 //                 {
 //                     flureeDbConn = conn;
 //                     db = flureenjs.db(conn, ledger);
-//                     flureenjs.q(db, JSON.stringify(body))
+//                     flureenjs.q(db, body)
 //                     .then (results => {
 //                         response.send(results);
 //                     })
