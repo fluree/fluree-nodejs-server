@@ -10,13 +10,13 @@
   "author": "Fluree",
   "license": "MIT",
   "dependencies": {
-    "@fluree/flureenjs": "^0.13.0",
+    "@fluree/flureenjs": "^0.15.0",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
-    "ws": "^7.2.1",
+    "ws": "^7.3.0",
     "xmlhttprequest": "^1.8.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.2"
+    "nodemon": "^2.0.4"
   }
 }
