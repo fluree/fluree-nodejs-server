@@ -6,7 +6,7 @@ This mini-application uses the [Fluree NodeJS library](https://docs.flur.ee/libr
 
 ### 1. Start Fluree
 
-Download and unzip the latest version of [Fluree Community Edition](https://fluree-releases-public.s3.amazonaws.com/fluree-latest.zip#).
+Download and unzip the latest version of [Fluree](https://fluree-releases-public.s3.amazonaws.com/fluree-latest.zip#).
 
 Navigate to the folder where unzipped Fluree, and run `./fluree_start.sh`. If you have Java 8+ installed, this should launch Fluree.  The Admin UI for the instance is available at `http://localhost:8080`. 
 
