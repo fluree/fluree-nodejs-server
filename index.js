@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const process = require('process');
 global.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;  // switch out to xhr2 https://stackoverflow.com/questions/32604460/xmlhttprequest-module-not-defined-found/46081151#46081151
 global.WebSocket = require('ws');  // https://flaviocopes.com/node-websockets/
-require('@fluree/flureenjs');
+const flureenjs = require('@fluree/flureenjs')
 
 const server = express();
 const PORT = 3000;
@@ -53,7 +53,7 @@ process.on('SIGINT', shutDownHandler);
 //------------------------
 // Fluree Logging
 //------------------------
-//flureenjs.set_logging({level: "config"});
+flureenjs.set_logging({level: "info"});
 
 //------------------------
 // Connection to Fluree
@@ -76,18 +76,16 @@ function flureeConnect(url, options){
     })
     .catch(error => {
         console.error("Error connecting to Fluree DB", error);
-        //  [  1.771s] [server] "Server contact error: " 
-        //  "xhttp error - http://localhost:8080/fdb/health" 
-        //  {:url "http://localhost:8080/fdb/health", :error :xhttp/http-error}
         // -> gracefully shutdown NodeJS server
         // -> or add re-try logic
     })   
 }
 
-//------------------------
+//-------------------------------------------------
 // Start-up query instance
-//------------------------
-const flureeUrl = "http://localhost:8080";
+// Create a connection object per database/auth
+//-------------------------------------------------
+const flureeUrl = "http://localhost:8090";
 const connectOpts = { keepAlive: true }
 // flureeConnect(flureeUrl);  // without client-side keep-alive
 flureeConnect(flureeUrl, connectOpts);  // with client-side keep-alive
@@ -108,6 +106,7 @@ listener.on('connection', connection => {
 });
 
 
+
 //------------------------
 // Routes
 //------------------------
@@ -119,7 +118,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
     const body    = request.body || {};
     const ledger  = network + '/' + dbId;
 
-    // "shared" variable names
+    //"shared" variable names
     var db = null;
     var opts = null;
     var query = null;
@@ -132,17 +131,20 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
 
     switch (action) {
 
+        // ***************************
+        // * Password Auth requests
+        // ***************************   
         case 'password_login':
             if (body.user) user = body.user;
             if (body.password) pwd = body.password;
-            if (body.expire) expire = body.expire;
+            if (body.expire)  expire = body.expire;
             flureenjs.password_login(flureeDbConn, ledger, pwd, user, auth, expire)
             .then (results => {
                 response.send(results);
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
 
@@ -156,7 +158,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
             
@@ -169,10 +171,190 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
                 })
                 .catch(error => {
                     console.log(error);
-                    response.status(500).send(error);
+                    response.status(400).send(error);
                 });
                 break;
 
+        // ***************************
+        // * Ledger-related requests
+        // ***************************  
+        case 'collection_id':
+            {
+                let name = body.name || "_collection"; 
+                flureenjs.db_p(flureeDbConn, ledger)
+                .then(db => {
+                    flureenjs.collection_id(db,name)
+                    .then(results => {
+                        response.send(JSON.stringify(results));
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        response.status(400).send(error);
+                    })
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(400).send(error);
+                });
+            }
+            break;
+
+        case 'collection_flakes':
+            {
+                let name = body.name || "_collection"; 
+                flureenjs.db_p(flureeDbConn, ledger)
+                .then(db => {
+                    flureenjs.collection_flakes(db,name)
+                    .then(results => {
+                        response.send(JSON.stringify(results));
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        response.status(400).send(error);
+                    })
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(400).send(error);
+                });               
+            }
+            break;
+
+        case 'delete_ledger':
+            if (body.opts)  opts = body.opts;
+            flureenjs.delete_ledger(flureeDbConn, ledger, opts)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });
+            break;
+                    
+        case 'ledger_info':
+             flureenjs.ledger_info(flureeDbConn, ledger)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });
+            break;
+                    
+        case 'ledger_list':
+            flureenjs.ledger_list(flureeDbConn)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });
+            break;
+                    
+        case 'ledger_stats':
+            flureenjs.ledger_stats(flureeDbConn, ledger)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });
+            break;
+    
+        case 'new_ledger':
+            if (body.opts)  opts = body.opts;
+            flureenjs.new_ledger(flureeDbConn, ledger, opts)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });
+            break;
+
+        case 'predicate_id':
+            {
+                let name = body.name || "_collection/name"; 
+                flureenjs.db_p(flureeDbConn, ledger)
+                .then(db => {
+                    flureenjs.predicate_id(db,name)
+                    .then(results => {
+                        response.send(JSON.stringify(results));
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        response.status(400).send(error);
+                    })
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(400).send(error);
+                });
+            }
+            break;
+
+        case 'predicate_name':
+            {   
+                let name = body.id || body.name || "_collection/name"; 
+                flureenjs.db_p(flureeDbConn, ledger)
+                .then(db => {
+                    flureenjs.predicate_name(db,name)
+                    .then(results => {
+                        response.send(JSON.stringify(results));
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        response.status(400).send(error);
+                    })
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(400).send(error);
+                });
+            }
+            break;
+    
+        case 'resolve_ledger':
+            flureenjs.resolve_ledger(flureeDbConn, ledger)
+            .then (results => {
+                response.send(results);
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });
+            break;
+
+        case 'subid':
+        {            
+            let ident = body.ident; 
+            console.log("body.ident:", ident);
+            flureenjs.db_p(flureeDbConn, ledger)
+            .then(db => {
+                flureenjs.subid(db,ident)
+                .then(results => {
+                    response.send(JSON.stringify(results));
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(400).send(error);
+                })
+            })
+            .catch(error => {
+                console.log(error);
+                response.status(400).send(error);
+            });}
+            break;
+
+
+        // ***************************
+        // * Query requests
+        // ***************************  
         case 'block_query':
             if (body.query) query = body.query;
             if (body.opts)  opts = body.opts;
@@ -182,21 +364,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
-            });
-            break;
-
-        case 'block_range':
-            const start = (body.start ? Number(body.start) : null);
-            const end = (body.end ? Number(body.end) : null);
-            if (body.opts)  opts = body.opts;
-            flureenjs.block_range(flureeDbConn, ledger, start, end, opts)
-            .then (results => {
-                response.send(results);
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
 
@@ -208,7 +376,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
 
@@ -220,7 +388,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
                             
@@ -233,7 +401,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;    
 
@@ -247,7 +415,7 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;    
             
@@ -261,60 +429,21 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;    
-        
-        case 'monitor_tx':
-            // retrieve txid and timeout from body
-            const txid = body.txid;
-            const timeout = (body.timeout ? Number(body.timeout) : 0);
-            flureenjs.monitor_tx(flureeDbConn, ledger, txid, timeout)
-            .then (results => {
-                response.send(results);
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
-            });
-            break;
-
-        case 'new_ledger':
-            if (body.opts)  opts = body.opts;
-            flureenjs.new_ledger(flureeDbConn, ledger, opts)
-            .then (results => {
-                response.send(results);
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
-            });
-            break;
         
         case 'query':
             if (body.query) query = body.query;
             if (body.opts)  opts = body.opts;
             db = flureenjs.db(flureeDbConn, ledger, opts);
-            flureenjs.q(db, query, opts)
+            flureenjs.query(db, query, opts)
             .then (results => {
                 response.send(JSON.stringify(results));
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
-            });
-            break;
-                            
-        case 'signed_query':
-            if (body.query) query = body.query;
-            if (body.opts)  opts = body.opts;
-            flureenjs.signed_query(flureeDbConn, ledger, query, opts)
-            .then (results => {
-                response.send(results);
-            })
-            .catch(error => {
-                console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
 
@@ -328,10 +457,28 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;    
-                    
+
+        // ***************************
+        // * transaction support
+        // ***************************  
+
+        case 'monitor_tx':
+                // retrieve txid and timeout from body
+                const txid = body.txid;
+                const timeout = (body.timeout ? Number(body.timeout) : 0);
+                flureenjs.monitor_tx(flureeDbConn, ledger, txid, timeout)
+                .then (results => {
+                    response.send(results);
+                })
+                .catch(error => {
+                    console.log(error);
+                    response.status(400).send(error);
+                });
+                break;
+
         case 'transact':
             txn = body.txn;
             if (body.opts)  opts = body.opts;
@@ -341,10 +488,10 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
             })
             .catch(error => {
                 console.log(error);
-                response.status(500).send(error);
+                response.status(400).send(error);
             });
             break;
-
+    
         default:
             response.status(404).send('Invalid action requested');
             break;
@@ -368,14 +515,14 @@ server.post('/api/db/:network/:db/:action', (request, response) => {
 //                 {
 //                     flureeDbConn = conn;
 //                     db = flureenjs.db(conn, ledger);
-//                     flureenjs.q(db, body)
+//                     flureenjs.query(db, body)
 //                     .then (results => {
 //                         response.send(results);
 //                     })
 //                     .catch(error => 
 //                         {
 //                             console.log(error);
-//                             response.status(500).send(error);
+//                             response.status(400).send(error);
 //                     })
 //                     .finally(() => { if (flureeDbConn !== undefined) flureenjs.close(flureeDbConn); });
 //                 })
